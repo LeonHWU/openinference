@@ -204,7 +204,7 @@ export class GoogleGenAIInstrumentation extends InstrumentationBase<GoogleGenAIM
                 [SemanticConventions.OPENINFERENCE_SPAN_KIND]: OpenInferenceSpanKind.LLM,
                 [SemanticConventions.LLM_SYSTEM]: "google_genai",
                 [SemanticConventions.LLM_PROVIDER]: "google",
-                [SemanticConventions.INPUT_VALUE]: safelyJSONStringify(requestParams),
+                [SemanticConventions.INPUT_VALUE]: safelyJSONStringify(requestParams) ?? undefined,
                 [SemanticConventions.INPUT_MIME_TYPE]: MimeType.JSON,
                 ...getRequestAttributes(requestParams),
               },
@@ -232,7 +232,7 @@ export class GoogleGenAIInstrumentation extends InstrumentationBase<GoogleGenAIM
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const wrappedPromiseThen = (result: any) => {
               span.setAttributes({
-                [SemanticConventions.OUTPUT_VALUE]: safelyJSONStringify(result),
+                [SemanticConventions.OUTPUT_VALUE]: safelyJSONStringify(result) ?? undefined,
                 [SemanticConventions.OUTPUT_MIME_TYPE]: MimeType.JSON,
                 ...getResponseAttributes(result),
               });
@@ -292,7 +292,7 @@ export class GoogleGenAIInstrumentation extends InstrumentationBase<GoogleGenAIM
                 [SemanticConventions.OPENINFERENCE_SPAN_KIND]: OpenInferenceSpanKind.LLM,
                 [SemanticConventions.LLM_SYSTEM]: "google_genai",
                 [SemanticConventions.LLM_PROVIDER]: "google",
-                [SemanticConventions.INPUT_VALUE]: safelyJSONStringify(requestParams),
+                [SemanticConventions.INPUT_VALUE]: safelyJSONStringify(requestParams) ?? undefined,
                 [SemanticConventions.INPUT_MIME_TYPE]: MimeType.JSON,
                 ...getRequestAttributes(requestParams),
               },
@@ -452,9 +452,10 @@ function getRequestAttributes(params: any): Attributes {
   }
 
   if (params.generationConfig) {
-    attributes[SemanticConventions.LLM_INVOCATION_PARAMETERS] = safelyJSONStringify(
-      params.generationConfig
-    );
+    const configJson = safelyJSONStringify(params.generationConfig);
+    if (configJson) {
+      attributes[SemanticConventions.LLM_INVOCATION_PARAMETERS] = configJson;
+    }
   }
 
   if (params.tools) {
@@ -523,8 +524,11 @@ function getResponseAttributes(response: any): Attributes {
             const toolCallPrefix = `${prefix}${SemanticConventions.MESSAGE_TOOL_CALLS}.${partIndex}.`;
             attributes[`${toolCallPrefix}${SemanticConventions.TOOL_CALL_FUNCTION_NAME}`] =
               part.functionCall.name;
-            attributes[`${toolCallPrefix}${SemanticConventions.TOOL_CALL_FUNCTION_ARGUMENTS_JSON}`] =
-              safelyJSONStringify(part.functionCall.args);
+            const argsJson = safelyJSONStringify(part.functionCall.args);
+            if (argsJson) {
+              attributes[`${toolCallPrefix}${SemanticConventions.TOOL_CALL_FUNCTION_ARGUMENTS_JSON}`] =
+                argsJson;
+            }
           }
         });
       }
